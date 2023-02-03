@@ -45,8 +45,22 @@ INNER JOIN PATIENTS p ON p.SUBJECT_ID=di.SUBJECT_ID
 INNER JOIN ADMISSIONS a ON a.HADM_ID=di.HADM_ID
 WHERE di.ICD9_CODE  REGEXP  '^1[4-9][0-9]|^2[0-3][0-9]'"
 
+sql3 <- "SELECT did.ICD9_CODE, di.HADM_ID, did.LONG_TITLE , COUNT(DISTINCT SUBJECT_ID ) AS N,(COUNT(DISTINCT SUBJECT_ID) / (SELECT COUNT(DISTINCT(SUBJECT_ID))  
+FROM DIAGNOSES_ICD di
+WHERE di.ICD9_CODE REGEXP '^1[4-9][0-9]|^2[0-3][0-9]') *100) AS Prevalence 
+FROM DIAGNOSES_ICD di
+INNER JOIN D_ICD_DIAGNOSES did ON did.ICD9_CODE = di.ICD9_CODE 
+WHERE di.HADM_ID IN (SELECT di.HADM_ID 
+FROM DIAGNOSES_ICD di 
+WHERE di.ICD9_CODE NOT REGEXP '^1[4-9][0-9]|^2[0-3][0-9]') 
+GROUP BY did.ICD9_CODE 
+ORDER BY Prevalence DESC"
 
 tbl <- dbGetQuery(con, sql)
-write.table(tbl,file = "table_all_subjects.txt")
 tbl2 <- dbGetQuery(con, sql2)
+tbl3 <- dbGetQuery(con, sql3)
+write.table(tbl,file = "table_all_subjects.txt")
 write.table(tbl2, file = "tbl2.txt")
+write.table(tbl3,file = "tblComor.txt")
+
+
